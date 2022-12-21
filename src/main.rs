@@ -2,6 +2,8 @@ use nannou::prelude::*;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
+use std::thread;
+use std::time::Duration;
 
 
 struct Life {
@@ -82,9 +84,10 @@ impl Life {
             bottom,
             bottomright,
         ];
+        //println!("{:?}", (x, y, neighbors));
 
-        neighbors.into_iter().fold(0, |mut n, neighbor| {
-            if neighbor {
+        neighbors.into_iter().fold(0, |mut n, neighbor_is_alive| {
+            if neighbor_is_alive {
                 n += 1;
             }
             n
@@ -132,6 +135,7 @@ impl Life {
     // 4) Any dead cell with exactly three live neighbours will come to life.
     // See https://conwaylife.com/wiki/Conway%27s_Game_of_Life#Rules
     fn compute_next(&mut self) -> () {
+        let mut next_grid = self.grid.clone();
         for (y, row) in self.grid.clone().into_iter().enumerate() {
             for (x, cell) in row.into_iter().enumerate() {
                 let live_neighbors = self.alive_neighbor_count(x, y);
@@ -139,42 +143,54 @@ impl Life {
                 if cell {
                     match live_neighbors {
                         // rule 1: underpop
-                        n if n < 2 => self.grid[y][x] = false,
+                        n if n < 2 => next_grid[y][x] = false,
                         // rule 2: overpop
-                        n if n > 3 => self.grid[y][x] = false,
+                        n if n > 3 => next_grid[y][x] = false,
                         // rule 3: continutation
                         _ => (),
                     };
+                    continue;
                 }
                 // rule 4 spawn
                 if live_neighbors == 3 {
-                    self.grid[y][x] = true;
+                    next_grid[y][x] = true;
                 }
             }
         }
+        self.grid = next_grid;
     }
 }
 
 fn main() {
     // let mut game: Life = Life::new("./init.txt".to_string());
     // println!("{:?}", game.grid);
-
     nannou::app(state).update(update).simple_window(view).run();
 }
 
 struct State {
     compute_grid: Life,
+    is_first_frame: bool
 }
 
 fn state(_app: &App) -> State {
+    _app.main_window().set_title("Game of Life");
+
     State {
         compute_grid: Life::new("./init.txt".to_string()),
+        is_first_frame: true
     }
 }
 
 fn update(_app: &App, state: &mut State, _update: Update) {
-    state.compute_grid.compute_next();
-    println!("tick");
+    thread::sleep(Duration::from_millis(256));
+
+    if !state.is_first_frame {
+        state.compute_grid.compute_next();
+
+    }
+
+    // println!("tick");
+    state.is_first_frame = false; 
 }
 
 fn view(app: &App, state: &State, frame: Frame) {
@@ -202,7 +218,7 @@ fn view(app: &App, state: &State, frame: Frame) {
 
     for i in 0..state.compute_grid.grid.len() {
         for j in 0..state.compute_grid.grid[i].len() {
-            if state.compute_grid.is_alive(i, j) {
+            if state.compute_grid.is_alive(j, i) {
                 let block_x = j as f32 * block_width + left_edge - screen_left_edge;
                 let block_y = -(i as f32 * block_height) - bottom_edge + screen_bottom_edge;
 
