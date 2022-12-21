@@ -6,4 +6,4 @@ I had to get more familiar with Rust somehow. This uses
 rendering and a handrolled Game-of-Life implementation abusing
 `std::Vec`
 
-![](https://github.com/kevinpthorne/life-rs/doc/demo.gif)
+![](https://raw.githubusercontent.com/kevinpthorne/life-rs/master/doc/demo.gif)
