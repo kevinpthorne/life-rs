@@ -174,6 +174,7 @@ struct State {
 
 fn state(_app: &App) -> State {
     _app.main_window().set_title("Game of Life");
+    _app.main_window().set_resizable(false);
 
     State {
         compute_grid: Life::new("./init.txt".to_string()),
